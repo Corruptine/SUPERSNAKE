@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>蛇形塔防 - 肉鸽游戏</title>
+    <style>
+        html, body { height: 100%; }
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            box-sizing: border-box;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0a;
+            touch-action: none;
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            z-index: 10;
+        }
+        
+        .stats {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 6px 8px;
+            border-radius: 5px;
+            margin-bottom: 4px;
+            border: 1px solid #FF4500;
+            box-shadow: 0 0 6px rgba(255, 69, 0, 0.35);
+        }
+        
+        .stats div {
+            margin: 2px 0;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+            font-size: 0.8em;
+        }
+        
+        .stats span {
+            color: #f39c12;
+            font-size: 1em;
+        }
+        
+        .controls-info {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 6px 8px;
+            border-radius: 4px;
+            border: 1px solid #4a90e2;
+            font-size: 0.8em;
+            margin-top: 6px;
+        }
+        
+        .controls-info div {
+            margin: 1px 0;
+            color: #bdc3c7;
+        }
+        
+        .controls-info div:first-child {
+            color: #3498db;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        
+        .boss-title {
+            background: linear-gradient(45deg, #8B0000, #FF4500);
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            border: 1px solid #FFD700;
+            box-shadow: 0 0 6px rgba(255, 69, 0, 0.4);
+            text-align: center;
+            max-width: 60vw;
+        }
+        
+        .boss-title h2 {
+            margin: 0;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            font-size: 0.95em;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px #FFD700;
+            }
+            to {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 20px #FFD700, 0 0 30px #FF4500;
+            }
+        }
+        
+        .upgrade-menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #4a90e2;
+            border-radius: 10px;
+            padding: 20px;
+            display: none;
+            z-index: 20;
+        }
+        
+        .upgrade-option {
+            background: rgba(74, 144, 226, 0.2);
+            border: 1px solid #4a90e2;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 5px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upgrade-option:hover {
+            background: rgba(74, 144, 226, 0.4);
+            transform: scale(1.05);
+        }
+        
+        .common { border-color: #4a90e2; }
+        .epic { border-color: #9b59b6; }
+        .legendary { border-color: #e67e22; }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #e74c3c;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            display: none;
+            z-index: 30;
+        }
+        
+        .restart-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+        
+        .restart-btn:hover {
+            background: #c0392b;
+        }
+
+        /* 主动技能按钮（移动端） */
+        .skill-btn {
+            position: absolute;
+            left: 12px;
+            bottom: 18px;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #4a90e2;
+            box-shadow: 0 0 8px rgba(74, 144, 226, 0.3);
+            color: #fff;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            touch-action: manipulation;
+            z-index: 25;
+        }
+        .skill-btn.cooldown {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div class="ui-overlay">
+            <div class="boss-title">
+                <h2>🐍 恶魔蛇王 🐍</h2>
+            </div>
+            <div class="stats">
+                <div>分数: <span id="score">0</span></div>
+                <div>等级: <span id="level">1</span></div>
+                <div>生命值: <span id="health">100</span></div>
+            </div>
+            
+        </div>
+        <!-- 主动技能按钮（移动端） -->
+        <div class="skill-btn" id="skillBtn">盾</div>
+        
+        <div class="upgrade-menu" id="upgradeMenu">
+            <h3>选择升级</h3>
+            <div id="upgradeOptions"></div>
+        </div>
+        
+        <div class="game-over" id="gameOver">
+            <h2>游戏结束</h2>
+            <p>最终分数: <span id="finalScore">0</span></p>
+            <button class="restart-btn" onclick="restartGame()">重新开始</button>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>
